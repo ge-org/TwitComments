@@ -10,7 +10,7 @@
         'theme': null
       }, options);*/
       
-      $.ajax({
+      /*$.ajax({
         url: 'http://api.twitter.com/1/users/show.json',
         method: 'GET',
         data: {'screen_name': 'ge_org'},
@@ -19,9 +19,28 @@
           
         },
         error: function(jqXHR, textStatus, errorThrown){alert('xhr: '+jqXHR.responseText+' text: '+textStatus+' err: '+errorThrown);}
-      });
+      });*/
+      
+      var $this = $(this),
+        data = $this.data('twitComments')
+        ;
+      
+      if (!data) {
+        
+        // setup
+          
+        $(this).data('twitComments', {
+          target: $this
+        });
+      }
+      
+      methods.createHTML();
       
       return this;
+    },
+    
+    createHTML: function() {
+      //
     }
   };
   
