@@ -10,10 +10,15 @@
         'theme': null
       }, options);*/
       
-      $.get('http://api.twitter.com/1/users/show.json', {
-        'screen_name': 'ge_org'
-      }, function(data) {
-        alert(data);
+      $.ajax({
+        url: 'http://api.twitter.com/1/users/show.json',
+        method: 'GET',
+        data: {'screen_name': 'ge_org'},
+        dataType: 'jsonp',
+        success: function(data) {
+          
+        },
+        error: function(jqXHR, textStatus, errorThrown){alert('xhr: '+jqXHR.responseText+' text: '+textStatus+' err: '+errorThrown);}
       });
       
       return this;
