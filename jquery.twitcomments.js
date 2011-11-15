@@ -8,6 +8,7 @@
     form: null,     // form element or null to generate form
     comments: null, // element that contains the comments or null
     intents: false, // true to enable web intents, false otherwise
+    defaultProfileImage: null,
     strings: {
       name: 'Twitter Username',      // default value of name input field
       comment: 'Write a comment...', // default value of comment textarea
@@ -18,10 +19,12 @@
   
   var cssClass = 'twitcomments';
   var classPrefix = cssClass + '-';
+  var $this;
   
   var methods = {
     init: function(options) {
 
+      $this = this;
       $.extend(defaults, options);
       methods._setupHTML.apply(this);
       methods._setupEvents.apply(this);
@@ -37,21 +40,6 @@
     _setupHTML: function() {
       
       this.addClass(cssClass);
-      
-      // create info
-      if (null === defaults.info) {
-        info = $('<div class="'+classPrefix+'info"></div>');
-        info.append($('<img src="" alt="" class="'+classPrefix+'info-image" />'));
-        info.append($('<span class="'+classPrefix+'span '+classPrefix+'info-fullname"><a href=""></a></span>'));
-        info.append($('<span class="'+classPrefix+'span '+classPrefix+'info-twittername"><a href=""></a></span>'));
-        info.append($('<span class="'+classPrefix+'span '+classPrefix+'info-location"></span>'));
-        
-        this.append(info);
-        info.hide();
-      } else {
-        defaults.info.hide();
-      }
-      
       
       // create form
       if (null === defaults.form) {
@@ -70,6 +58,7 @@
       if (null === defaults.comments) {
         comments = $('<div class="'+classPrefix+'comments"></div>');
         this.append(comments);
+        comments.hide();
       }
       
       return this;
@@ -101,27 +90,22 @@
     },
     
     _updateUserInfo: function(screenName) {
+      if (defaults.info == null && $('.'+classPrefix+'info').length == 0) {
+        $this.prepend($('<div class="'+classPrefix+'info"></div>'));
+      }    
+      infoBlock = (defaults.info) ? defaults.info : $('.'+classPrefix+'info');
+      infoBlock.hide();
+      
       $.ajax({
         url: 'http://api.twitter.com/1/users/show.json',
         method: 'GET',
         data: { 'screen_name': screenName },
         dataType: 'jsonp',
         success: function(data) {
-          twitterNameURL = (defaults.intents) ? 'https://twitter.com/intent/user?screen_name='+data.screen_name : 'http://twitter.com/'+data.screen_name;
-          
-          $('.'+classPrefix+'info-image').attr('src', data.profile_image_url);
-          $('.'+classPrefix+'info-fullname a').attr('href', data.url).text(data.name);
-          $('.'+classPrefix+'info-twittername a').attr('href', twitterNameURL).text('@'+data.screen_name);
-          $('.'+classPrefix+'info-location').text(defaults.strings.location+' '+data.location);
-          
-          $('.'+classPrefix+'info').fadeIn();
+          infoBlock.html(methods._getNewUserBlock(data)).fadeIn();
         },
-        status: {
-          400: function(jqXHR, textStatus, errorThrown) {
-            // TODO
-            $('.'+classPrefix+'info').text('Error');
-            $('.'+classPrefix+'info').fadeIn();
-          }
+        error: function(jqXHR, textStatus, errorThrown) {
+          infoBlock.html('').fadeIn();
         }
       });
       
@@ -133,9 +117,13 @@
         $.ajax({
           url: defaults.pullURL,
           method: 'GET',
-          dataType: 'jsonp',
+          dataType: 'json',
           success: function(data) {
-            $('.'+classPrefix+'comments').text(data);
+            comments = $('.'+classPrefix+'comments');
+            $.each(data, function(key, data) {
+              comments.append(methods._getNewUserBlock(data));
+            });
+            $('.'+classPrefix+'comments').fadeIn();
           },
           status: {
             400: function(jqXHR, textStatus, errorThrown) {
@@ -146,6 +134,30 @@
       }
       
       return this;
+    },
+    
+    _getNewUserBlock: function(data) {
+      
+      imageURL = (data.profile_image_url) ? data.profile_image_url : defaults.defaultProfileImage;
+      fullName = (data.url) ? '<a href="'+data.url+'">'+data.name+'</a>' : data.name;
+      twitterURL = (defaults.intents) ? 'https://twitter.com/intent/user?screen_name='+data.screen_name : 'http://twitter.com/'+data.screen_name;
+      
+      block = $('<div></div>');
+      block.append($('<img src="'+imageURL+'" alt="" class="'+classPrefix+'user-image" />'));
+      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-fullname">'+fullName+'</span>'));
+      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-twittername"><a href="'+twitterURL+'">@'+data.screen_name+'</a></span>'));
+      
+      if (data.comment_timestamp) {
+        block.append($('<span class="'+classPrefix+'span '+classPrefix+'comment-time">'+data.comment_timestamp+'</span>'));
+      }
+      
+      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-location">'+defaults.strings.location+' '+data.location+'</span>'));
+      
+      if (data.comment_content) {
+        block.append($('<span class="'+classPrefix+'span '+classPrefix+'comment-content">'+data.comment_content+'</span>'));
+      }
+      
+      return block;
     }
   };
   
