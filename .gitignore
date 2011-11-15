@@ -1,4 +1,5 @@
 jquery-1.7.min.js
 index.html
-comments.json
+get.json
+post.json
 .DS_Store
