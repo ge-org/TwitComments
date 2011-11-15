@@ -8,7 +8,7 @@
     form: null,     // form element or null to generate form
     comments: null, // element that contains the comments or null
     intents: false, // true to enable web intents, false otherwise
-    defaultProfileImage: null,
+    defaultProfileImage: '#',
     strings: {
       twitterUsername: 'Twitter Username',
       writeAComment: 'Write a comment...',
@@ -56,7 +56,7 @@
         
         form = $('<form class="'+classPrefix+'form" action="'+action+'" method="post"></form>');
         form.append($('<span class="'+classPrefix+'span '+classPrefix+'at-prefix">@</span>'));
-        form.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-name" value="'+defaults.strings.twitterUsername+'" />'));
+        form.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-screen_name" value="'+defaults.strings.twitterUsername+'" />'));
         form.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.strings.writeAComment+'</textarea>'));
         form.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+defaults.strings.submit+'" />'));
         
@@ -75,19 +75,19 @@
     
     _setupEvents: function() {
       
-      $('.'+classPrefix+'input-name, .'+classPrefix+'input-comment').on('focus.twitcomments', function () {
+      $('.'+classPrefix+'input-screen_name, .'+classPrefix+'input-comment').on('focus.twitcomments', function () {
         $(this).data('originalValue', $(this).val());
         $(this).val('');
       });
       
-      $('.'+classPrefix+'input-name, .'+classPrefix+'input-comment').on('blur.twitcomments', function () {
+      $('.'+classPrefix+'input-screen_name, .'+classPrefix+'input-comment').on('blur.twitcomments', function () {
         originalValue = $(this).data('originalValue');
         if ($(this).val() == '') {
           $(this).val(originalValue);
         }
       });
       
-      $('.'+classPrefix+'input-name').on('blur.twitcomments', function () {
+      $('.'+classPrefix+'input-screen_name').on('blur.twitcomments', function () {
         methods._updateUserInfo($(this).val());
       });
       
@@ -110,15 +110,21 @@
       
       $.ajax({
         url: 'http://api.twitter.com/1/users/show.json',
-        method: 'GET',
+        type: 'GET',
         data: { 'screen_name': screenName },
         dataType: 'jsonp',
         success: function(data) {
           $this.data('userExists', true);
+          $this.data('screen_name', data.screen_name);
+          $this.data('name', data.name);
+          $this.data('url', data.url);
+          $this.data('location', data.location);
+          $this.data('profile_image_url', data.profile_image_url);
           infoBlock.html(methods._getNewUserBlock(data)).fadeIn();
         },
         error: function(jqXHR, textStatus, errorThrown) {
           // TODO
+          alert('Can\'t load user');
         }
       });
       
@@ -129,7 +135,7 @@
       if (defaults.pullURL) {
         $.ajax({
           url: defaults.pullURL,
-          method: 'GET',
+          type: 'GET',
           dataType: 'json',
           success: function(data) {
             comments = $('.'+classPrefix+'comments');
@@ -141,6 +147,7 @@
           status: {
             400: function(jqXHR, textStatus, errorThrown) {
               // TODO
+              alert('Can\'t load comments');
             }
           }
         });
@@ -150,25 +157,36 @@
     },
     
     _submit: function() {
-      if ($('.'+classPrefix+'form .'+classPrefix+'input-name').val() == '') {
+      if ($('.'+classPrefix+'form .'+classPrefix+'input-screen_name').val() == '' || $('.'+classPrefix+'form .'+classPrefix+'input-screen_name').val() == defaults.strings.twitterUsername) {
         // TODO
         alert('User empty');
       } else if (!$this.data('userExists')) {
         // TODO
         alert('User no exist');
+      } else if ($('.'+classPrefix+'form .'+classPrefix+'input-comment').val() == '' || $('.'+classPrefix+'form .'+classPrefix+'input-comment').val() == defaults.strings.writeAComment) {
+        // TODO
+        alert('Comment no');
       } else {
         $.ajax({
           url: defaults.pushURL,
-          method: 'POST',
-          data: { foo: 'bar' },
+          type: 'POST',
+          data: {
+            screen_name: $this.data('screen_name'),
+            name: $this.data('name'),
+            url: $this.data('url'),
+            location: $this.data('location'),
+            profile_image_url: $this.data('profile_image_url'),
+            comment_content: $('.'+classPrefix+'form .'+classPrefix+'input-comment').val()
+          },
           dataType: 'json',
           success: function(data) {
-            infoBlock = methods._getNewUserBlock(data).hide();
+            infoBlock = methods._getNewUserBlock(data[0]).hide();
             $('.'+classPrefix+'comments').prepend(infoBlock);
             infoBlock.fadeIn();
           },
           error: function(jqXHR, textStatus, errorThrown) {
             // TODO
+            alert('Can\'t save');
           }
         });
       }
@@ -183,9 +201,9 @@
       block = $('<div></div>');
       block.append($('<img src="'+imageURL+'" alt="" class="'+classPrefix+'user-image" />'));
       if (data.name) {
-        block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-fullname">'+fullName+'</span>'));
+        block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-name">'+fullName+'</span>'));
       }
-      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-twittername"><a href="'+twitterURL+'">@'+data.screen_name+'</a></span>'));
+      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-screen_name"><a href="'+twitterURL+'">@'+data.screen_name+'</a></span>'));
       if (data.comment_timestamp) {
         block.append($('<span class="'+classPrefix+'span '+classPrefix+'comment-time">'+methods._relativeDate(new Date(data.comment_timestamp), new Date())+'</span>'));
       }
