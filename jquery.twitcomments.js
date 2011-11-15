@@ -2,8 +2,8 @@
   
   var defaults = {
     auth: false,    // true to activate authentication, false otherwise
-    url: null,      // url string or null
-    pull: true,     // true pulls comments from server, false otherwise
+    pushURL: null,  // url string or null
+    pullURL: null, // true pulls comments from server, false otherwise
     info: null,     // element that will contain the user info or null to generate one
     form: null,     // form element or null to generate form
     comments: null, // element that contains the comments or null
@@ -25,7 +25,7 @@
       $.extend(defaults, options);
       methods._setupHTML.apply(this);
       methods._setupEvents.apply(this);
-      methods._pullComments.applay(this);
+      methods._pullComments.apply(this);
       
       // display form
       
@@ -55,7 +55,7 @@
       
       // create form
       if (null === defaults.form) {
-        action = (defaults.url === null) ? '#' : defaults.url;
+        action = (defaults.pushURL === null) ? '#' : defaults.pushURL;
         
         form = $('<form class="'+classPrefix+'form" action="'+action+'" method="post"></form>');
         form.append($('<span class="'+classPrefix+'span '+classPrefix+'at-prefix">@</span>'));
@@ -124,6 +124,26 @@
           }
         }
       });
+      
+      return this;
+    },
+    
+    _pullComments: function() {
+      if (defaults.pullURL) {
+        $.ajax({
+          url: defaults.pullURL,
+          method: 'GET',
+          dataType: 'jsonp',
+          success: function(data) {
+            $('.'+classPrefix+'comments').text(data);
+          },
+          status: {
+            400: function(jqXHR, textStatus, errorThrown) {
+              // TODO
+            }
+          }
+        });
+      }
       
       return this;
     }
