@@ -1,18 +1,22 @@
 (function($){
   
   var defaults = {
-    auth: false,    // true to activate authentication, false otherwise
-    pushURL: null,  // url string or null
-    pullURL: null, // true pulls comments from server, false otherwise
-    info: null,     // element that will contain the user info or null to generate one
-    form: null,     // form element or null to generate form
-    comments: null, // element that contains the comments or null
-    intents: false, // true to enable web intents, false otherwise
-    defaultProfileImage: '#',
+    pushURL: null,   // url string or null
+    pullURL: null,   // url string or null
+    params: null,    // parameters that will be send to the pushURL and pullURL (e.g. a page identifier)
+    defaultProfileImageURL: '#',
+    cssClass: 'twitcomments',
+    twitterAnywhere: {
+      auth: false,
+      linkify: true,
+      hovercards: true
+    },
     strings: {
       twitterUsername: 'Twitter Username',
-      writeAComment: 'Write a comment...',
+      writeAComment: 'Write a comment&hellip;',
       submit: 'Comment',
+      submitWithAuth: 'Sign in with Twitter and comment',
+      sending: 'Sending...',
       from: 'from',
       justNow: 'just now',
       aMinuteAgo: 'a minute ago',
@@ -29,51 +33,61 @@
       yearsAgo: 'years ago'
     }
   };
-  
-  var cssClass = 'twitcomments';
-  var classPrefix = cssClass + '-';
-  var $this;
+
+  var $this = null;
+  var classPrefix = null;
+  var currentUser = null;
   
   var methods = {
     init: function(options) {
 
-      $this = this;
       $.extend(defaults, options);
-      methods._setupHTML.apply(this);
-      methods._setupEvents.apply(this);
-      methods._pullComments.apply(this);
+      
+      $this = this;
+      classPrefix = defaults.cssClass + '-';
+      this.addClass(defaults.cssClass);
+      
+      this.hide();
+      methods._setupCommentForm.apply(this);
+      methods._setupUserProfile.apply(this);
+      methods._setupCommentList.apply(this);
+      this.fadeIn();
       
       return this;
     },
     
-    _setupHTML: function() {
-      
-      this.addClass(cssClass);
-      
-      // create form
-      if (null === defaults.form) {
-        action = (defaults.pushURL === null) ? '#' : defaults.pushURL;
+    _setupCommentForm: function() {
+      action = (defaults.pushURL) ? defaults.pushURL : '#';
+      buttonText = (defaults.twitterAnywhere.auth) ? defaults.strings.submitWithAuth : defaults.strings.submit;
         
-        form = $('<form class="'+classPrefix+'form" action="'+action+'" method="post"></form>');
+      form = $('<form class="'+classPrefix+'form" action="'+action+'" method="post"></form>');
+      if (!defaults.twitterAnywhere.auth) {
         form.append($('<span class="'+classPrefix+'span '+classPrefix+'at-prefix">@</span>'));
         form.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-screen_name" value="'+defaults.strings.twitterUsername+'" />'));
-        form.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.strings.writeAComment+'</textarea>'));
-        form.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+defaults.strings.submit+'" />'));
+      }
+      form.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.strings.writeAComment+'</textarea>'));
+      form.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+buttonText+'" />'));
+
+      this.append(form);
         
-        this.append(form);
-      }
-      
-      // create comments
-      if (null === defaults.comments) {
-        comments = $('<div class="'+classPrefix+'comments"></div>');
-        this.append(comments);
-        comments.hide();
-      }
-      
-      return this;
-    },
-    
-    _setupEvents: function() {
+      form.on('submit.twitcomments', function(e) {
+        if (defaults.twitterAnywhere.auth) {
+          twttr.anywhere(function (T) {
+            if (!T.isConnected()) {
+              T.signIn({
+                authComplete: function(user) {
+                  methods._submitWithAuth();
+                }
+              });
+            } else {
+              methods._submitWithAuth();
+            }
+          });
+        } else {
+          methods._submitWithoutAuth();
+        }
+        e.preventDefault();
+      });
       
       $('.'+classPrefix+'input-screen_name, .'+classPrefix+'input-comment').on('focus.twitcomments', function () {
         $(this).data('originalValue', $(this).val());
@@ -86,135 +100,188 @@
           $(this).val(originalValue);
         }
       });
-      
-      $('.'+classPrefix+'input-screen_name').on('blur.twitcomments', function () {
-        methods._updateUserInfo($(this).val());
-      });
-      
-      if (defaults.pushURL) {
-        $('.'+classPrefix+'form').on('submit.twitcomments', function (e) {
-          methods._submit();
-          e.preventDefault();
-        });
-      }
-      
-      return this;
     },
     
-    _updateUserInfo: function(screenName) {
-      if (defaults.info == null && $('.'+classPrefix+'info').length == 0) {
-        $this.prepend($('<div class="'+classPrefix+'info"></div>'));
-      }    
-      infoBlock = (defaults.info) ? defaults.info : $('.'+classPrefix+'info');
-      infoBlock.hide();
+    _setupUserProfile: function() {
+      userProfile = $('<div class="'+classPrefix+'userProfile"></div>');
+      userProfile.hide();
+      this.prepend(userProfile);
+      
+      if (defaults.twitterAnywhere.auth) {
+        twttr.anywhere(function (T) {
+          if (T.isConnected()) {
+            methods._loadUserProfile(T.currentUser.data('screen_name'), methods._displayUserProfile);
+          }
+        });
+      } else {
+        $('.'+classPrefix+'input-screen_name').on('blur.twitcomments', function() {
+          methods._loadUserProfile($(this).val(), methods._displayUserProfile);
+        });
+      }
+    },
+    
+    _setupCommentList: function() {
+      var comments = $('<div class="'+classPrefix+'comments"></div>');
+      this.append(comments);
+      
+      $.ajax({
+        url: defaults.pullURL,
+        type: 'GET',
+        data: { params: defaults.params },
+        dataType: 'json',
+        success: function(data) {
+          $.each(data, function(key, data) {
+            comments.append(methods._getUserProfileDOM(data));
+            // TODO add comment text
+          });
+          
+          methods._twitterAnywhere(comments);
+        },
+        status: {
+          400: function(jqXHR, textStatus, errorThrown) {
+            // TODO
+            alert('Can\'t load comments');
+          }
+        }
+      });
+    },
+    
+    _displayUserProfile: function() {
+      userProfile = $('.'+classPrefix+'userProfile');
+      userProfile.hide();
+      
+      if (currentUser != null) {
+        userProfile.html(methods._getUserProfileDOM(currentUser)).fadeIn();
+        
+        methods._twitterAnywhere(userProfile);
+      }
+    },
+    
+    _loadUserProfile: function(screenName, callback) {
+      var userProfile = $('.'+classPrefix+'info');
+      userProfile.hide();
       
       $.ajax({
         url: 'http://api.twitter.com/1/users/show.json',
         type: 'GET',
-        data: { 'screen_name': screenName },
+        data: { screen_name: screenName },
         dataType: 'jsonp',
         success: function(data) {
-          $this.data('userExists', true);
-          $this.data('screen_name', data.screen_name);
-          $this.data('name', data.name);
-          $this.data('url', data.url);
-          $this.data('location', data.location);
-          $this.data('profile_image_url', data.profile_image_url);
-          infoBlock.html(methods._getNewUserBlock(data)).fadeIn();
+          currentUser = {};
+          currentUser.screen_name = data.screen_name;
+          currentUser.name = data.name;
+          currentUser.url = data.url;
+          currentUser.location = data.location;
+          currentUser.profile_image_url = data.profile_image_url;
+          userProfile.html(methods._getUserProfileDOM(currentUser)).fadeIn();
         },
         error: function(jqXHR, textStatus, errorThrown) {
           // TODO
+          currentUser = null;
           alert('Can\'t load user');
+        },
+        complete: function() {
+          callback.call();
         }
       });
       
       return this;
     },
     
-    _pullComments: function() {
-      if (defaults.pullURL) {
-        $.ajax({
-          url: defaults.pullURL,
-          type: 'GET',
-          dataType: 'json',
-          success: function(data) {
-            comments = $('.'+classPrefix+'comments');
-            $.each(data, function(key, data) {
-              comments.append(methods._getNewUserBlock(data));
-            });
-            $('.'+classPrefix+'comments').fadeIn();
-          },
-          status: {
-            400: function(jqXHR, textStatus, errorThrown) {
-              // TODO
-              alert('Can\'t load comments');
-            }
-          }
-        });
-      }
-      
-      return this;
-    },
-    
-    _submit: function() {
-      if ($('.'+classPrefix+'form .'+classPrefix+'input-screen_name').val() == '' || $('.'+classPrefix+'form .'+classPrefix+'input-screen_name').val() == defaults.strings.twitterUsername) {
-        // TODO
-        alert('User empty');
-      } else if (!$this.data('userExists')) {
-        // TODO
-        alert('User no exist');
-      } else if ($('.'+classPrefix+'form .'+classPrefix+'input-comment').val() == '' || $('.'+classPrefix+'form .'+classPrefix+'input-comment').val() == defaults.strings.writeAComment) {
+    _submitWithAuth: function() {
+      if ($('.'+classPrefix+'input-comment').val() == '' || $('.'+classPrefix+'input-comment').val() == defaults.strings.writeAComment) {
         // TODO
         alert('Comment no');
       } else {
-        $.ajax({
-          url: defaults.pushURL,
-          type: 'POST',
-          data: {
-            screen_name: $this.data('screen_name'),
-            name: $this.data('name'),
-            url: $this.data('url'),
-            location: $this.data('location'),
-            profile_image_url: $this.data('profile_image_url'),
-            comment_content: $('.'+classPrefix+'form .'+classPrefix+'input-comment').val()
-          },
-          dataType: 'json',
-          success: function(data) {
-            infoBlock = methods._getNewUserBlock(data[0]).hide();
-            $('.'+classPrefix+'comments').prepend(infoBlock);
-            infoBlock.fadeIn();
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            // TODO
-            alert('Can\'t save');
-          }
+        methods._pushComment();    
+      }
+    },
+    
+    _submitWithoutAuth: function() {
+      if (currentUser == null) {
+        // TODO
+        alert('no user');
+      } else if ($('.'+classPrefix+'input-comment').val() == '' || $('.'+classPrefix+'input-comment').val() == defaults.strings.writeAComment) {
+        // TODO
+        alert('Comment no');
+      } else {
+        methods._pushComment();
+      }
+    },
+    
+    _pushComment: function() {
+      methods._toggleIndicator();
+      $.ajax({
+        url: defaults.pushURL,
+        type: 'POST',
+        data: {
+          screen_name: $this.data('screen_name'),
+          name: $this.data('name'),
+          url: $this.data('url'),
+          location: $this.data('location'),
+          profile_image_url: $this.data('profile_image_url'),
+          comment_content: $('.'+classPrefix+'form .'+classPrefix+'input-comment').val(),
+          params: defaults.params
+        },
+        dataType: 'json',
+        success: function(data) {
+          infoBlock = methods._getNewUserBlock(data[0]).hide();
+          $('.'+classPrefix+'comments').prepend(infoBlock);
+          infoBlock.fadeIn();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          // TODO
+          alert('Can\'t save');
+        },
+        complete: function(){
+          methods._toggleIndicator();
+        }
+      });
+    },
+    
+    _toggleIndicator: function() {
+      submitButton = $('.'+classPrefix+'input-submit');
+      
+      if (submitButton.attr('disabled') == 'disabled') {
+        submitButton.val(submitButton.data('original-text'));
+        submitButton.removeAttr('disabled');
+      } else {
+        submitButton.data('original-text', submitButton.val());
+        submitButton.val(defaults.strings.sending);
+        submitButton.attr('disabled', 'disabled');
+      }
+    },
+    
+    _twitterAnywhere: function(element) {
+      if (defaults.twitterAnywhere.hovercards) {
+        twttr.anywhere(function(T) {
+          T(userProfile).hovercards();
+        });
+      }
+    
+      if (!defaults.twitterAnywhere.hovercards && defaults.twitterAnywhere.linkify) {
+        twttr.anywhere(function(T) {
+          T(userProfile).linkify();
         });
       }
     },
     
-    _getNewUserBlock: function(data) {
+    _getUserProfileDOM: function(user) {
       
-      imageURL = (data.profile_image_url) ? data.profile_image_url : defaults.defaultProfileImage;
-      fullName = (data.url) ? '<a href="'+data.url+'">'+data.name+'</a>' : data.name;
-      twitterURL = (defaults.intents) ? 'https://twitter.com/intent/user?screen_name='+data.screen_name : 'http://twitter.com/'+data.screen_name;
+      imageURL = (user.profile_image_url) ? user.profile_image_url : defaults.defaultProfileImageURL;
+      fullName = (user.url) ? '<a href="'+user.url+'">'+user.name+'</a>' : user.name;
       
-      block = $('<div></div>');
-      block.append($('<img src="'+imageURL+'" alt="" class="'+classPrefix+'user-image" />'));
-      if (data.name) {
-        block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-name">'+fullName+'</span>'));
+      userProfile = $('<div></div>');
+      userProfile.append($('<img src="'+imageURL+'" alt="" class="'+classPrefix+'user-image" />'));
+      if (user.name) {
+        userProfile.append($('<span class="'+classPrefix+'span '+classPrefix+'user-name">'+fullName+'</span>'));
       }
-      block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-screen_name"><a href="'+twitterURL+'">@'+data.screen_name+'</a></span>'));
-      if (data.comment_timestamp) {
-        block.append($('<span class="'+classPrefix+'span '+classPrefix+'comment-time">'+methods._relativeDate(new Date(data.comment_timestamp), new Date())+'</span>'));
-      }
-      if (data.location) {
-        block.append($('<span class="'+classPrefix+'span '+classPrefix+'user-location">'+defaults.strings.from+' '+data.location+'</span>'));
-      }
-      if (data.comment_content) {
-        block.append($('<span class="'+classPrefix+'span '+classPrefix+'comment-content">'+data.comment_content+'</span>'));
+      userProfile.append($('<span class="'+classPrefix+'span '+classPrefix+'user-screen_name">@'+user.screen_name+'</span>'));
+      if (user.location) {
+        userProfile.append($('<span class="'+classPrefix+'span '+classPrefix+'user-location">'+defaults.strings.from+' '+user.location+'</span>'));
       }
       
-      return block;
+      return userProfile;
     },
     
     /**
