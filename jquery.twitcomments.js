@@ -34,7 +34,6 @@
 
   var $this = null;
   var classPrefix = null;
-  var currentUser = null;
   
   var methods = {
     init: function(options) {
@@ -46,12 +45,18 @@
       this.addClass(defaults.cssClass);
       
       this.hide();
+      methods._setupErrorDisplay.apply(this);
       methods._setupCommentForm.apply(this);
-      methods._setupUserProfile.apply(this);
       methods._setupCommentList.apply(this);
       this.fadeIn();
       
       return this;
+    },
+    
+    _setupErrorDisplay: function() {
+      errorDisplay = $('<span class="'+classPrefix+'span '+classPrefix+'error-message"></span>');
+      errorDisplay.hide();
+      this.append(errorDisplay);
     },
     
     _setupCommentForm: function() {
@@ -65,16 +70,16 @@
 
       this.append(form);
         
-      form.on('submit.twitcomments', function(e){e.preventDefault();});
-      $('.'+classPrefix+'input-submit').on('click.twitcomments', function(e) {
+      $('.'+classPrefix+'form').on('submit.twitcomments', function(e) {
         e.preventDefault();
         
+        screenName = $('.'+classPrefix+'input-screen_name').val();
         commentContent = $('.'+classPrefix+'input-comment').val();
-        if (currentUser == null) {
-          $('.'+classPrefix+'userProfile').append($('<span class="'+classPrefix+'span .'+classPrefix+'error">'+defaults.strings.errorNoName+'</span>')).fadeIn();
+        if (screenName == '' || screenName == defaults.strings.twitterUsername) {
+          methods._displayError(defaults.strings.errorNoName);
           return false;
         } else if (commentContent == '' || commentContent == defaults.strings.writeAComment) {
-          $('.'+classPrefix+'userProfile').append($('<span class="'+classPrefix+'span .'+classPrefix+'error">'+defaults.strings.errorNoComment+'</span>')).fadeIn();
+          methods._displayError(defaults.strings.errorNoComment);
           return false;
         } else {
           methods._pushComment();
@@ -94,25 +99,6 @@
       });
     },
     
-    _setupUserProfile: function() {
-      userProfile = $('<div class="'+classPrefix+'userProfile"></div>');
-      userProfile.hide();
-      this.prepend(userProfile);
-      
-      var timer = 0;
-      $('.'+classPrefix+'input-screen_name').on('keyup.twitcomments', function() {
-        screen_name = $('.'+classPrefix+'input-screen_name').val();
-        
-        if (timer) {
-          clearTimeout(timer);
-        }
-      
-        timer = setTimeout(function() {
-          methods._loadUserProfile(screen_name, methods._displayUserProfile);
-        }, 500);
-      });
-    },
-    
     _setupCommentList: function() {
       var comments = $('<div class="'+classPrefix+'comments"></div>');
       this.append(comments);
@@ -128,53 +114,9 @@
           });
         },
         error: function(jqXHR, textStatus, errorThrown) {
-          comments.html($('<span class="'+classPrefix+'span .'+classPrefix+'error">'+defaults.strings.errorCommentsNotLoaded+'</span>'));
+          methods._displayError(defaults.strings.errorCommentsNotLoaded);
         }
       });
-    },
-    
-    _displayUserProfile: function() {
-      userProfile = $('.'+classPrefix+'userProfile');
-      
-      if (currentUser != null && $this.data('user-changed')) {
-        userProfile.html(methods._getUserProfileDOM(currentUser)).fadeIn();
-      }
-    },
-    
-    _loadUserProfile: function(screenName, callback) {
-      var userProfile = $('.'+classPrefix+'info');
-      userProfile.hide();
-      
-      $.getJSON('http://api.twitter.com/1/users/show.json?screen_name=ge_org', function(data){console.log('ok');});
-      
-      $.ajax({
-        url: 'http://api.twitter.com/1/users/show.xml',
-        type: 'GET',
-        data: { screen_name: screenName },
-        success: function(data) {
-          $this.data('user-changed', (currentUser == null || (currentUser != null && currentUser.screen_name != data.screen_name)));
-          
-          currentUser = {};
-          currentUser.screen_name = data.screen_name;
-          currentUser.name = data.name;
-          currentUser.url = data.url;
-          currentUser.location = data.location;
-          currentUser.profile_image_url = data.profile_image_url;
-          userProfile.html(methods._getUserProfileDOM(currentUser)).fadeIn();
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-          // TODO
-          currentUser = null;
-          console.log('cannnot load user');
-          console.log(textStatus);
-          console.log(errorThrown);
-        },
-        complete: function() {
-          callback.call();
-        }
-      });
-      
-      return this;
     },
     
     _pushComment: function() {
@@ -183,19 +125,18 @@
         url: defaults.pushURL,
         type: 'POST',
         data: {
-          user: currentUser,
+          user: $('.'+classPrefix+'input-screen_name').val(),
           comment: $('.'+classPrefix+'form .'+classPrefix+'input-comment').val(),
           params: defaults.params
         },
         dataType: 'json',
         success: function(data) {
           commentBlock = methods._getCommentPostDOM(data).hide();
-          
           $('.'+classPrefix+'comments').prepend(commentBlock);
           commentBlock.fadeIn();
         },
         error: function(jqXHR, textStatus, errorThrown) {
-          $('.'+classPrefix+'userProfile').append($('<span class="'+classPrefix+'span .'+classPrefix+'error">'+defaults.strings.errorCommentNotSaved+'</span>')).fadeIn();
+          methods._displayError(defaults.strings.errorCommentNotSaved);
         },
         complete: function(){
           methods._toggleIndicator();
@@ -240,6 +181,11 @@
       commentBlock.append($('<span class="'+classPrefix+'span .'+classPrefix+'comment-content">'+comment.comment_content+'</span>'));
       
       return commentBlock;
+    },
+    
+    _displayError: function(message) {
+      error = $('<span class="'+classPrefix+'span .'+classPrefix+'error">'+message+'</span>');
+      $('.'+classPrefix+'error-message').html(error).fadeIn();
     },
     
     /**
