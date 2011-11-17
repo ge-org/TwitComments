@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Test</title>
+		<script src="jquery-1.7.min.js"></script>
+		<script src="jquery.twitcomments.min.js"></script>
+		
+		<style>
+			.twitcomments-comments { margin-top: 20px}
+			.twitcomments-comment { clear: left; margin-bottom: 20px }
+			.twitcomments-comment .twitcomments-profile-image { float: left; margin-right: 5px }
+			.twitcomments-comment .twitcomments-name { font-size: 18px; margin-right: 5px }
+			.twitcomments-comment .twitcomments-screen-name { font-size: 14px; }
+			.twitcomments-comment .twitcomments-meta_container { font-size: 14px; font-style: italic; color: #999 }
+			.twitcomments-comment .twitcomments-time { margin-right: 5px}
+			.twitcomments-comment .twitcomments-content { margin-top: 15px}
+		</style>
+	</head>
+	<body>
+		<div id="comments"></div>
+		
+		<script>
+			$(document).ready(function(){				
+				$('#comments').twitComments({
+					pullURL: 'example-get.json',
+					pushURL: 'example-post.json'
+				});
+			});
+		</script>
+	</body>
+</html>
