@@ -1,9 +1,9 @@
 (function($){
   
   var defaults = {
-    pushURL: null,   // url string or null
-    pullURL: null,   // url string or null
-    params: null,    // parameters that will be send to the pushURL and pullURL (e.g. a page identifier)
+    pushURL: null,
+    pullURL: null,
+    params: null,
     defaultProfileImageURL: '#',
     cssClass: 'twitcomments',
     twitterUsername: 'Twitter Username',
