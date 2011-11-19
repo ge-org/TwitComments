@@ -4,7 +4,7 @@
     pushURL: null,
     pullURL: null,
     params: null,
-    defaultProfileImageURL: '#',
+    defaultProfileImageURL: null,
     cssClass: 'twitcomments',
     twitterUsername: 'Twitter Username',
     writeAComment: 'Write a comment...',
@@ -157,7 +157,7 @@
     
     _getUserProfileDOM: function(user) {
       
-      imageURL = (user.profile_image_url) ? user.profile_image_url : defaults.defaultProfileImageURL;
+      imageURL = (!user.profile_image_url || user.profile_image_url == '') ? defaults.defaultProfileImageURL : user.profile_image_url;
       fullName = (user.url) ? '<a href="'+user.url+'">'+user.name+'</a>' : user.name;
       
       userProfile = $('<div class="'+classPrefix+'comment"></div>');
