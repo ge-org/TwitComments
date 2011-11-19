@@ -66,16 +66,16 @@
       fieldset = ($('<fieldset></fieldset>'));
       fieldset.append($('<legend>'+defaults.comments+'</legend>'));
       
-      usernameContainer = $('<div class="'+classPrefix+'username-container"></div>');
+      usernameContainer = $('<div class="'+classPrefix+'container '+classPrefix+'username-container"></div>');
       usernameContainer.append($('<label class="'+classPrefix+'at-prefix">@</label>'));
       usernameContainer.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-screen_name" value="'+defaults.twitterUsername+'" />'));
       fieldset.append(usernameContainer);
       
-      commentContainer = $('<div class="'+classPrefix+'comment-container"></div>');
+      commentContainer = $('<div class="'+classPrefix+'container '+classPrefix+'comment-container"></div>');
       commentContainer.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.writeAComment+'</textarea>'));
       fieldset.append(commentContainer);
       
-      submitContainer = $('<div class="'+classPrefix+'submit-container"></div>');
+      submitContainer = $('<div class="'+classPrefix+'container '+classPrefix+'submit-container"></div>');
       submitContainer.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+defaults.submit+'" />'));
       fieldset.append(submitContainer);
 
