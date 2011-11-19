@@ -5,127 +5,18 @@ What it does
 * Pushes comments to your server
 * Allows visitors to comment using their Twitter screen name
 
+The plugin is based on the idea of [Joey Primiani](http://jprim.com/introducing-a-simpler-blog-commenting-system/)
 
-Installation
-============
+How-To
+======
 
-Add jQuery and TwitComments to your HTML
+[See the wiki]:(https://github.com/ge-org/TwitComments/wiki)
 
-```html
-<script src="jquery-1.7.min.js"></script>
-<script src="jquery.twitcomments.min.js"></script>
-```
-
-Activate TwitComments
-
-```html
-<script>
- $(document).ready(function(){				
-  $('#comments').twitComments({
-   pullURL: 'comments.php',
-   pushURL: 'comments.php'
-  });
- });
-</script>
-```
-
-Backend
+License
 =======
+Copyright (c) 2011 Georg Dresler
 
-Your server will receive a request in the JSON format when a new comment is submitted.
-The JSON will look like this:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-```json
-{
-  "screen_name": "twitterapi",
-  "url": "http://dev.twitter.com",
-  "name": "Twitter API",
-  "location": "San Francisco, CA",
-  "profile_image_url": "https://si0.twimg.com/profile_images/1438634086/avatar_normal.png",
-}
-```
-
-The browser expects a JSON response with the following content:
-
-```json
-{
-  "screen_name": "twitterapi",
-  "url": "http://dev.twitter.com",
-  "name": "Twitter API",
-  "location": "San Francisco, CA",
-  "profile_image_url": "https://si0.twimg.com/profile_images/1438634086/avatar_normal.png",
-  "comment_timestamp": "2011-11-15 17:34:00",
-  "comment_content": "Hello, World!"
-}
-```
-The same JSON is expected when you answer the request to fetch all comments.
-
-Configuration
-=============
-
-<table>
-  <tr>
-    <th>Option</th>
-    <th>Type</th>
-    <th>Default Value</th>
-    <th>Description</th>
-  </tr>
-  <tr>
-    <td>pushURL</td>
-    <td>string</td>
-    <td>null</td>
-    <td>Where to send a new comment</td>
-  </tr>
-  <tr>
-    <td>pullURL</td>
-    <td>string</td>
-    <td>null</td>
-    <td>Where to get the comments from</td>
-  </tr>
-  <tr>
-    <td>params</td>
-    <td>mixed</td>
-    <td>null</td>
-    <td>Additional params your server will receive on every request. Put your page ID here.</td>
-  </tr>
-  <tr>
-    <td>defaultProfileImageURL</td>
-    <td>string</td>
-    <td>#</td>
-    <td>If the user has no profile image use this one</td>
-  </tr>
-  <tr>
-    <td>cssClass</td>
-    <td>string</td>
-    <td>twitcomments</td>
-    <td>CSS class to prefix all of TwitComments' DOM elements</td>
-  </tr>
-</table>
-
-I18N
-====
-
-Use the following options to provide translated strings
-
-* twitterUsername
-* writeAComment
-* submit
-* sending
-* errorNoName
-* errorNoComment
-* errorCommentsNotLoaded
-* errorCommentNotSaved
-* from
-* justNow
-* aMinuteAgo
-* minutesAgo
-* oneHourAgo
-* hoursAgo
-* yesterday
-* daysAgo
-* aWeekAgo
-* weeksAgo
-* aMonthAgo
-* monthsAgo
-* aYearAgo
-* yearsAgo
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
