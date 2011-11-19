@@ -10,7 +10,7 @@ The plugin is based on the idea of [Joey Primiani](http://jprim.com/introducing-
 How-To
 ======
 
-[See the wiki]:(https://github.com/ge-org/TwitComments/wiki)
+[See the wiki](https://github.com/ge-org/TwitComments/wiki)
 
 License
 =======
