@@ -53,7 +53,7 @@
     },
     
     _setupErrorDisplay: function() {
-      errorDisplay = $('<span class="'+classPrefix+'span '+classPrefix+'error-message"></span>');
+      errorDisplay = $('<div class="'+classPrefix+'error-message"></div>');
       errorDisplay.hide();
       this.append(errorDisplay);
     },
@@ -146,6 +146,7 @@
           commentBlock = methods._getCommentPostDOM(data).hide();
           $('.'+classPrefix+'comments').prepend(commentBlock);
           commentBlock.fadeIn();
+          $('.'+classPrefix+'error-message').html('').hide();
         },
         error: function(jqXHR, textStatus, errorThrown) {
           methods._displayError(defaults.errorCommentNotSaved);
@@ -204,7 +205,7 @@
     },
     
     _displayError: function(message) {
-      error = $('<span class="'+classPrefix+'span .'+classPrefix+'error">'+message+'</span>');
+      error = $('<span class="'+classPrefix+'span '+classPrefix+'error">'+message+'</span>');
       $('.'+classPrefix+'error-message').html(error).fadeIn();
     },
     
