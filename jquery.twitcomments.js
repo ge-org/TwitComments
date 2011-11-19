@@ -6,6 +6,7 @@
     params: null,
     defaultProfileImageURL: null,
     cssClass: 'twitcomments',
+    comments: 'Comments',
     twitterUsername: 'Twitter Username',
     writeAComment: 'Write a comment...',
     submit: 'Comment',
@@ -61,11 +62,24 @@
       action = (defaults.pushURL) ? defaults.pushURL : '#';
         
       form = $('<form class="'+classPrefix+'form" action="'+action+'" method="post"></form>');
-      form.append($('<span class="'+classPrefix+'span '+classPrefix+'at-prefix">@</span>'));
-      form.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-screen_name" value="'+defaults.twitterUsername+'" />'));
-      form.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.writeAComment+'</textarea>'));
-      form.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+defaults.submit+'" />'));
+      
+      fieldset = ($('<fieldset></fieldset>'));
+      fieldset.append($('<legend>'+defaults.comments+'</legend>'));
+      
+      usernameContainer = $('<div class="'+classPrefix+'username-container"></div>');
+      usernameContainer.append($('<label class="'+classPrefix+'at-prefix">@</label>'));
+      usernameContainer.append($('<input type="text" name="'+classPrefix+'screen_name" class="'+classPrefix+'input '+classPrefix+'input-screen_name" value="'+defaults.twitterUsername+'" />'));
+      fieldset.append(usernameContainer);
+      
+      commentContainer = $('<div class="'+classPrefix+'comment-container"></div>');
+      commentContainer.append($('<textarea name="'+classPrefix+'comment" class="'+classPrefix+'textarea '+classPrefix+'input-comment">'+defaults.writeAComment+'</textarea>'));
+      fieldset.append(commentContainer);
+      
+      submitContainer = $('<div class="'+classPrefix+'submit-container"></div>');
+      submitContainer.append($('<input type="submit" name="'+classPrefix+'submit" class="'+classPrefix+'button '+classPrefix+'input-submit" value="'+defaults.submit+'" />'));
+      fieldset.append(submitContainer);
 
+      form.append(fieldset);
       this.append(form);
         
       $('.'+classPrefix+'form').on('submit.twitcomments', function(e) {
