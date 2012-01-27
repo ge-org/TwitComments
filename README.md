@@ -149,7 +149,7 @@ The "{}" in the strings concerning the time will be replaced by the according nu
 </tr>
 
 <tr>
-<td><writeAComment</td>
+<td>writeAComment</td>
 <td>Write a comment...</td>
 </tr>
 
