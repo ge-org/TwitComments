@@ -1,4 +1,6 @@
-# What it does
+# README
+
+## What it does
 
 * Fetches comments from your server and displays them
 * Pushes comments to your server
@@ -6,9 +8,9 @@
 
 The plugin is based on the idea of [Joey Primiani](http://jprim.com/introducing-a-simpler-blog-commenting-system/)
 
-# How-To
+## How-To
 
-## Installation
+### Installation
 For code examples have a look at the "example" directory.
 
 To install TwitComments simply reference the jquery.twitcomments.min.js file from your HTML:
@@ -29,11 +31,11 @@ Then add the following to the end of the ```<body>``` tag making sure to replace
 </script>
 ```
 
-## Server Communication
+### Server Communication
 The plugin needs to communicates with your server to obtain existing comments and to send new comments.
 Therefore you need the set the ```pullURL``` and ```pushURL```. The first URL will be called to retrieve comments from your server and the second will be called to send a new comment to your server.
 
-## Pulling Comments
+### Pulling Comments
 Your server must understand the following GET request. "pullURL" will be replaced with the URL you provided.
 ```
 GET /pullURL?params=[...] HTTP/1.1
@@ -63,7 +65,7 @@ The server must respond with HTTP status code 200 and the following JSON format:
 
 If any error occurs server side the server must respond with a HTTP status code other than 200 (404, 500, ...).
 
-## Pushing Comments
+### Pushing Comments
 Your server must understand the following POST request. "pushURL" will be replaced with the URL you provided.
 ```
 POST /pushURL HTTP/1.1
@@ -95,7 +97,7 @@ The server must then respond with HTTP status code 200 and the following JSON fo
 
 If any error occurs server side the server must respond with a HTTP status code other than 200 (404, 500, ...).
 
-## Configuration
+### Configuration
 To configure the plugin you can set the following optional configuration options:
 
 <table>
@@ -254,7 +256,7 @@ The "{}" in the strings concerning the time will be replaced by the according nu
 </tr>
 </table>
 
-# License
+## License
 Copyright (c) 2011 Georg Dresler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
